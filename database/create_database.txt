@@ -1,0 +1,111 @@
+CREATE TABLE employees (
+    employee_id SERIAL,
+    employee_number VARCHAR(20) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    employment_status VARCHAR(30) NOT NULL DEFAULT 'active',
+    hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    termination_date DATE,
+    is_rehireable BOOLEAN,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (employee_id),
+    UNIQUE (employee_number),
+
+    CHECK (employment_status IN (
+        'active',
+        'on_leave',
+        'terminated',
+        'suspended',
+        'training',
+        'seasonal'
+    )),
+
+    CHECK (
+        (employment_status = 'terminated' AND is_rehireable IS NOT NULL)
+        OR
+        (employment_status <> 'terminated' AND is_rehireable IS NULL)
+    ),
+
+    CHECK (termination_date IS NULL OR employment_status = 'terminated')
+);
+
+CREATE TABLE employee_auth (
+    employee_id INTEGER,
+    username VARCHAR(50) NOT NULL,
+    password_hash TEXT NOT NULL,
+    last_login TIMESTAMP,
+
+    PRIMARY KEY (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    UNIQUE (username)
+);
+
+CREATE TABLE employee_contact_info (
+    employee_id INTEGER,
+    email VARCHAR(100),
+    phone_number VARCHAR(20),
+
+    PRIMARY KEY (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    UNIQUE (email)
+);
+
+CREATE TABLE employee_compensation (
+    employee_id INTEGER,
+    pay_type VARCHAR(20) NOT NULL,
+    hourly_rate NUMERIC(10,2),
+    annual_salary NUMERIC(12,2),
+
+    PRIMARY KEY (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+
+    CHECK (pay_type IN ('hourly', 'salary')),
+
+    CHECK (
+        (
+            pay_type = 'hourly'
+            AND hourly_rate IS NOT NULL
+            AND annual_salary IS NULL
+        )
+        OR
+        (
+            pay_type = 'salary'
+            AND annual_salary IS NOT NULL
+            AND hourly_rate IS NULL
+        )
+    )
+);
+
+CREATE TABLE employee_personal_info (
+    employee_id INTEGER,
+    date_of_birth DATE NOT NULL,
+
+    PRIMARY KEY (employee_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+);
+
+CREATE TABLE employee_disciplinary_actions (
+    action_id SERIAL,
+    employee_id INTEGER NOT NULL,
+    action_type VARCHAR(30) NOT NULL,
+    action_reason TEXT NOT NULL,
+    issued_by_employee_id INTEGER NOT NULL,
+    issued_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expiration_date DATE,
+    notes TEXT,
+
+    PRIMARY KEY (action_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (issued_by_employee_id) REFERENCES employees(employee_id),
+
+    CHECK (action_type IN (
+        'verbal_warning',
+        'written_warning',
+        'final_warning',
+        'suspension',
+        'termination'
+    ))
+);
