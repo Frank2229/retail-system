@@ -109,3 +109,29 @@ CREATE TABLE employee_disciplinary_actions (
         'termination'
     ))
 );
+
+CREATE TABLE employee_time_punches (
+    punch_id SERIAL,
+    employee_id INTEGER NOT NULL,
+    terminal_id INTEGER,
+    punch_type VARCHAR(20) NOT NULL,
+    punch_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    verification_method VARCHAR(30) NOT NULL,
+    confidence_score NUMERIC(5,4),
+    notes TEXT,
+    PRIMARY KEY (punch_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+
+    CHECK (punch_type IN (
+        'clock_in',
+        'clock_out',
+        'break_start',
+        'break_end'
+    )),
+
+    CHECK (verification_method IN (
+        'face',
+        'pin',
+        'manual_override'
+    ))
+);
